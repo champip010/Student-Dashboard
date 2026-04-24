@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import { doubleCsrf } from 'csrf-csrf';
 import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
@@ -20,8 +22,48 @@ export const prisma = new PrismaClient();
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+  credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
+
+const {
+  doubleCsrfProtection,
+  generateCsrfToken,
+} = doubleCsrf({
+  getSecret: () => process.env.JWT_SECRET || 'default-secret',
+  cookieName: 'x-csrf-token',
+  cookieOptions: {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    secure: process.env.NODE_ENV === 'production',
+  },
+  size: 64,
+  ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
+  getTokenFromRequest: (req) => req.headers['x-csrf-token'],
+  getSessionIdentifier: (req) => {
+    // Since we are using JWT in headers and not sessions, 
+    // we can return a constant or something unique from the JWT if available.
+    // For simplicity in this MVP, we return a constant.
+    return 'default-session';
+  },
+});
+
+app.get('/api/csrf-token', (req, res) => {
+  const token = generateCsrfToken(req, res);
+  res.json({ token });
+});
+
+// Protect all state-changing routes
+app.use('/api', (req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+  return doubleCsrfProtection(req, res, next);
+});
 
 const swaggerOptions = {
   definition: {

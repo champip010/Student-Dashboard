@@ -7,13 +7,38 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
+let csrfToken: string | null = null;
+
+export const fetchCsrfToken = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/csrf-token`, { withCredentials: true });
+    csrfToken = response.data.token;
+    return csrfToken;
+  } catch (error) {
+    console.error('Failed to fetch CSRF token:', error);
+    return null;
+  }
+};
+
+api.interceptors.request.use(async (config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Add CSRF token for state-changing methods
+  if (config.method && !['get', 'head', 'options'].includes(config.method.toLowerCase())) {
+    if (!csrfToken) {
+      await fetchCsrfToken();
+    }
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
+  }
+
   return config;
 });
 
