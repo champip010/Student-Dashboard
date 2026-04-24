@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Enums are not supported natively in SQLite by Prisma, using String instead
+// enum UserRole {
+//   ADMIN
+//   TEACHER
+//   STUDENT
+// }
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      String   // ADMIN, TEACHER, STUDENT
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacherProfile Teacher?
+  studentProfile Student?
+  activityLogs   ActivityLog[]
+}
+
+model Teacher {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName String
+  lastName  String
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  classes       Class[]
+  assignments   Assignment[]
+  tests         Test[]
+  activityLogs  ActivityLog[]
+}
+
+model Student {
+  id           String        @id @default(uuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName    String
+  lastName     String
+  dateOfBirth  DateTime
+  email        String
+  phone        String?
+  address      String?
+  photoUrl     String?
+  enrollmentDate DateTime    @default(now())
+  graduationYear Int?
+  status       String        @default("ACTIVE") // ACTIVE, INACTIVE, GRADUATED
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  enrollments     EnrollRequest[]
+  submissions     Submission[]
+  testScores      TestScore[]
+  researchProgress ResearchProgress?
+  activityLogs    ActivityLog[]
+}
+
+model ResearchProgress {
+  id          String   @id @default(uuid())
+  studentId   String   @unique
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  stage       String   // IOC, Thesis First 3 Chapters, IRB Waiting, Data Collection, Analysis, Final Thesis
+  status      String   @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, STUCK
+  lastUpdated DateTime @default(now())
+  remarks     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Class {
+  id          String     @id @default(uuid())
+  code        String     @unique
+  name        String
+  subject     String
+  description String?
+  room        String?
+  schedule    String?
+  status      String     @default("ACTIVE") // ACTIVE, ARCHIVED
+  teacherId   String
+  teacher     Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  enrollments EnrollRequest[]
+  assignments Assignment[]
+  tests       Test[]
+}
+
+model EnrollRequest {
+  id        String   @id @default(uuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  enrolledAt DateTime @default(now())
+
+  @@unique([studentId, classId])
+}
+
+model Assignment {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  dueDate     DateTime
+  maxScore    Int
+  attachments String?  // JSON stringified array for SQLite compatibility
+  classId     String
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacherId   String
+  teacher     Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  submissions Submission[]
+}
+
+model Submission {
+  id          String          @id @default(uuid())
+  assignmentId String
+  assignment  Assignment      @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  fileUrl     String?
+  score       Int?
+  status      String          @default("PENDING") // PENDING, SUBMITTED, LATE, MISSING
+  submittedAt DateTime?
+  gradedAt    DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([assignmentId, studentId])
+}
+
+model Test {
+  id        String   @id @default(uuid())
+  title     String
+  date      DateTime
+  duration  Int
+  totalMarks Int
+  syllabus  String?
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  scores TestScore[]
+}
+
+model TestScore {
+  id        String   @id @default(uuid())
+  testId    String
+  test      Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  marks     Int
+  percentage Float
+  gradedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([testId, studentId])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  studentId String?
+  student   Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+}
