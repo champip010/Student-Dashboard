@@ -1,4 +1,4 @@
-export type WidgetType = 'TIMELINE' | 'MILESTONES' | 'DEADLINES' | 'ACTION_ITEMS' | 'STATS';
+export type WidgetType = 'TIMELINE' | 'MILESTONES' | 'DEADLINES' | 'ACTION_ITEMS' | 'STATS' | 'CLASS_OVERVIEW' | 'TEST_PERFORMANCE' | 'RECENT_ASSIGNMENTS';
 
 export interface WidgetConfig {
   id: string;

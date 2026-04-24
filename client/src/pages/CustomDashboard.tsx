@@ -5,9 +5,10 @@ import {
 } from 'lucide-react';
 import { 
   TimelineWidget, MilestoneTrackerWidget, DeadlinesWidget, 
-  ActionItemsWidget, StatsWidget 
+  ActionItemsWidget, StatsWidget, ClassOverviewWidget, 
+  TestPerformanceWidget, RecentAssignmentsWidget 
 } from '../components/DashboardWidgets';
-import { researchService, assignmentService } from '../services/api';
+import { researchService, assignmentService, classService, testService } from '../services/api';
 import { ResearchProgress } from '../types';
 import { WidgetConfig, WidgetType } from '../types/dashboard';
 
@@ -19,6 +20,9 @@ const CustomDashboard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [researchData, setResearchData] = useState<ResearchProgress[]>([]);
   const [deadlines, setDeadlines] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [tests, setTests] = useState<any[]>([]);
+  const [recentAssignments, setRecentAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWidgetLibrary, setShowWidgetLibrary] = useState(false);
 
@@ -37,12 +41,17 @@ const CustomDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [research, assns] = await Promise.all([
+        const [research, assns, classList, testList] = await Promise.all([
           researchService.getAll(),
-          assignmentService.getAll({ limit: 5 })
+          assignmentService.getAll({ limit: 5 }),
+          classService.getAll({ limit: 5 }),
+          testService.getAll({ limit: 5 })
         ]);
         setResearchData(research);
         setDeadlines(assns.assignments);
+        setClasses(classList.classes);
+        setTests(testList.tests);
+        setRecentAssignments(assns.assignments);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -75,6 +84,9 @@ const CustomDashboard = () => {
       case 'DEADLINES': return <DeadlinesWidget data={deadlines} />;
       case 'ACTION_ITEMS': return <ActionItemsWidget data={researchData} />;
       case 'STATS': return <StatsWidget data={researchData} />;
+      case 'CLASS_OVERVIEW': return <ClassOverviewWidget data={classes} />;
+      case 'TEST_PERFORMANCE': return <TestPerformanceWidget data={tests} />;
+      case 'RECENT_ASSIGNMENTS': return <RecentAssignmentsWidget data={recentAssignments} />;
       default: return null;
     }
   };
@@ -154,7 +166,10 @@ const CustomDashboard = () => {
                 { type: 'TIMELINE', title: t('Research Timeline'), icon: '🕒' },
                 { type: 'MILESTONES', title: t('Milestone Tracker'), icon: '📈' },
                 { type: 'DEADLINES', title: t('Upcoming Deadlines'), icon: '📅' },
-                { type: 'ACTION_ITEMS', title: t('Recommended Actions'), icon: '💡' }
+                { type: 'ACTION_ITEMS', title: t('Recommended Actions'), icon: '💡' },
+                { type: 'CLASS_OVERVIEW', title: t('Class Overview'), icon: '🏫' },
+                { type: 'TEST_PERFORMANCE', title: t('Test Performance'), icon: '📝' },
+                { type: 'RECENT_ASSIGNMENTS', title: t('Recent Assignments'), icon: '📄' }
               ].map(w => (
                 <div key={w.type} className="border rounded-lg p-4 flex flex-col gap-3 hover:border-blue-500 transition-colors bg-white">
                   <div className="flex items-center gap-3">

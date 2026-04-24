@@ -68,6 +68,16 @@ const ClassDetail = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!id || !confirm('Are you sure you want to delete this class? This action cannot be undone.')) return;
+    try {
+      await classService.delete(id);
+      navigate('/classes');
+    } catch (error) {
+      console.error('Failed to delete class:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -202,10 +212,22 @@ const ClassDetail = () => {
             </div>
           </div>
 
-          {user?.role === 'ADMIN' && classData.status === 'ACTIVE' && (
-            <button onClick={handleArchive} className="btn btn-secondary w-full">
-              Archive Class
-            </button>
+          {user?.role !== 'STUDENT' && (
+            <div className="space-y-3">
+              <Link to={`/classes/${id}/edit`} className="btn btn-primary w-full">
+                Edit Class
+              </Link>
+              {user?.role === 'ADMIN' && classData.status === 'ACTIVE' && (
+                <button onClick={handleArchive} className="btn btn-secondary w-full">
+                  Archive Class
+                </button>
+              )}
+              {user?.role === 'ADMIN' && (
+                <button onClick={handleDelete} className="btn btn-danger w-full">
+                  Delete Class
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -174,3 +174,94 @@ export const StatsWidget: React.FC<{ data: ResearchProgress[] }> = ({ data }) =>
     </div>
   );
 };
+
+// 6. Class Overview Widget
+export const ClassOverviewWidget: React.FC<{ data: any[] }> = ({ data }) => {
+  const { t } = useTranslation();
+  
+  return (
+    <div className="h-full flex flex-col">
+      <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+        <TrendingUp size={16} /> {t('Class Overview')}
+      </h3>
+      <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+        {data.length > 0 ? data.map((cls, idx) => (
+          <div key={idx} className="p-3 bg-blue-50 rounded-lg text-xs">
+            <div className="flex justify-between items-center">
+              <p className="font-bold text-blue-800">{cls.name}</p>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                cls.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+              }`}>
+                {cls.status}
+              </span>
+            </div>
+            <p className="text-blue-600 mt-1">{cls.code} • {cls.subject}</p>
+            <p className="text-blue-600 mt-1">Students: {(cls as any)._count?.enrollments || 0}</p>
+          </div>
+        )) : (
+          <p className="text-gray-400 text-xs italic text-center py-4">{t('No classes available')}</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// 7. Test Performance Widget
+export const TestPerformanceWidget: React.FC<{ data: any[] }> = ({ data }) => {
+  const { t } = useTranslation();
+  
+  const chartData = data.map(test => {
+    const avgScore = test.scores?.length > 0 
+      ? test.scores.reduce((sum: number, score: any) => sum + score.marks, 0) / test.scores.length
+      : 0;
+    return {
+      name: test.title,
+      average: avgScore,
+      total: test.totalMarks
+    };
+  });
+
+  return (
+    <div className="h-full flex flex-col">
+      <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+        <TrendingUp size={16} /> {t('Test Performance')}
+      </h3>
+      <div className="flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="name" fontSize={10} />
+            <YAxis fontSize={10} />
+            <Tooltip />
+            <Bar dataKey="average" name="Average Score" fill="#3b82f6" />
+            <Bar dataKey="total" name="Total Marks" fill="#94a3b8" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+// 8. Recent Assignments Widget
+export const RecentAssignmentsWidget: React.FC<{ data: any[] }> = ({ data }) => {
+  const { t } = useTranslation();
+  
+  return (
+    <div className="h-full flex flex-col">
+      <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+        <Clock size={16} /> {t('Recent Assignments')}
+      </h3>
+      <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+        {data.length > 0 ? data.map((assignment, idx) => (
+          <div key={idx} className="p-2 bg-purple-50 border-l-4 border-purple-500 rounded text-xs">
+            <p className="font-bold text-purple-800">{assignment.title}</p>
+            <p className="text-purple-600">Due: {new Date(assignment.dueDate).toLocaleDateString()}</p>
+            <p className="text-purple-600">Class: {assignment.class?.name}</p>
+          </div>
+        )) : (
+          <p className="text-gray-400 text-xs italic text-center py-4">{t('No recent assignments')}</p>
+        )}
+      </div>
+    </div>
+  );
+};

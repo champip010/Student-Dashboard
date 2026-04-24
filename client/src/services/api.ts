@@ -232,6 +232,10 @@ export const researchService = {
     const response = await api.post('/research', data);
     return response.data;
   },
+  delete: async (studentId: string) => {
+    const response = await api.delete(`/research/${studentId}`);
+    return response.data;
+  },
 };
 
 export const userService = {

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { testService } from '../services/api';
 import { Test } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 const TestDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [test, setTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,6 +54,16 @@ const TestDetail = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!id || !confirm('Are you sure you want to delete this test? This action cannot be undone.')) return;
+    try {
+      await testService.delete(id);
+      navigate('/tests');
+    } catch (error) {
+      console.error('Failed to delete test:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -72,9 +83,17 @@ const TestDetail = () => {
       <div className="flex items-center justify-between">
         <Link to="/tests" className="text-gray-500 hover:text-gray-700">← Back to Tests</Link>
         {isTeacher && (
-          <button onClick={handleExport} className="btn btn-primary">
-            Export Results (CSV)
-          </button>
+          <div className="flex gap-3">
+            <Link to={`/tests/${id}/edit`} className="btn btn-primary">
+              Edit Test
+            </Link>
+            <button onClick={handleExport} className="btn btn-secondary">
+              Export Results (CSV)
+            </button>
+            <button onClick={handleDelete} className="btn btn-danger">
+              Delete Test
+            </button>
+          </div>
         )}
       </div>
 

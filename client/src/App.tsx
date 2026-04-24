@@ -6,10 +6,13 @@ import Students from './pages/Students';
 import StudentProfile from './pages/StudentProfile';
 import Classes from './pages/Classes';
 import ClassDetail from './pages/ClassDetail';
+import ClassForm from './pages/ClassForm';
 import Assignments from './pages/Assignments';
 import AssignmentDetail from './pages/AssignmentDetail';
+import AssignmentForm from './pages/AssignmentForm';
 import Tests from './pages/Tests';
 import TestDetail from './pages/TestDetail';
+import TestForm from './pages/TestForm';
 import Analytics from './pages/Analytics';
 import ResearchTracker from './pages/ResearchTracker';
 import CustomDashboard from './pages/CustomDashboard';
@@ -47,15 +50,21 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={<CustomDashboard />} />
         <Route path="students" element={<Students />} />
         <Route path="students/:id" element={<StudentProfile />} />
         <Route path="classes" element={<Classes />} />
+        <Route path="classes/new" element={<ClassForm />} />
         <Route path="classes/:id" element={<ClassDetail />} />
+        <Route path="classes/:id/edit" element={<ClassForm />} />
         <Route path="assignments" element={<Assignments />} />
+        <Route path="assignments/new" element={<AssignmentForm />} />
         <Route path="assignments/:id" element={<AssignmentDetail />} />
+        <Route path="assignments/:id/edit" element={<AssignmentForm />} />
         <Route path="tests" element={<Tests />} />
+        <Route path="tests/new" element={<TestForm />} />
         <Route path="tests/:id" element={<TestDetail />} />
+        <Route path="tests/:id/edit" element={<TestForm />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="research" element={<ResearchTracker />} />
         <Route path="custom-dashboard" element={<CustomDashboard />} />

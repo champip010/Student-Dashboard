@@ -18,6 +18,10 @@ const ResearchTracker = () => {
     status: 'IN_PROGRESS',
     remarks: '',
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [studentIdToDelete, setStudentIdToDelete] = useState('');
+  const [stageFilter, setStageFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   const stages = [
     'IOC',
@@ -30,10 +34,14 @@ const ResearchTracker = () => {
 
   const statuses = ['IN_PROGRESS', 'COMPLETED', 'STUCK'];
 
-  const fetchRecords = async (searchQuery = search) => {
+  const fetchRecords = async (searchQuery = search, stage = stageFilter, status = statusFilter) => {
     setLoading(true);
     try {
-      const data = await researchService.getAll({ search: searchQuery || undefined });
+      const data = await researchService.getAll({ 
+        search: searchQuery || undefined,
+        stage: stage || undefined,
+        status: status || undefined
+      });
       setRecords(data);
     } catch (error) {
       console.error('Failed to fetch research records:', error);
@@ -60,7 +68,7 @@ const ResearchTracker = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchRecords(search);
+    fetchRecords(search, stageFilter, statusFilter);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,6 +81,23 @@ const ResearchTracker = () => {
     } catch (error) {
       console.error('Failed to update progress:', error);
     }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await researchService.delete(studentIdToDelete);
+      fetchRecords();
+    } catch (error) {
+      console.error('Failed to delete progress:', error);
+    } finally {
+      setShowDeleteModal(false);
+      setStudentIdToDelete('');
+    }
+  };
+
+  const openDeleteModal = (studentId: string) => {
+    setStudentIdToDelete(studentId);
+    setShowDeleteModal(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -111,14 +136,40 @@ const ResearchTracker = () => {
       </div>
 
       <div className="card">
-        <form onSubmit={handleSearch} className="flex gap-4 mb-6">
+        <form onSubmit={handleSearch} className="flex flex-wrap gap-4 mb-6">
           <input
             type="text"
             placeholder={t('Search students...')}
-            className="input flex-1"
+            className="input flex-1 min-w-[200px]"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <select
+            className="input w-48"
+            value={stageFilter}
+            onChange={(e) => {
+              setStageFilter(e.target.value);
+              fetchRecords(search, e.target.value, statusFilter);
+            }}
+          >
+            <option value="">{t('All Stages')}</option>
+            {stages.map((s) => (
+              <option key={s} value={s}>{getStageDisplay(s)}</option>
+            ))}
+          </select>
+          <select
+            className="input w-48"
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              fetchRecords(search, stageFilter, e.target.value);
+            }}
+          >
+            <option value="">{t('All Status')}</option>
+            {statuses.map((s) => (
+              <option key={s} value={s}>{getStatusDisplay(s)}</option>
+            ))}
+          </select>
           <button type="submit" className="btn btn-primary">
             {t('Search')}
           </button>
@@ -138,6 +189,9 @@ const ResearchTracker = () => {
                   <th className="text-left py-3 px-4 font-semibold text-gray-600">{t('Status')}</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600">{t('Last Updated')}</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600">{t('Remarks')}</th>
+                  {user?.role === 'ADMIN' && (
+                    <th className="text-left py-3 px-4 font-semibold text-gray-600">{t('Actions')}</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -162,6 +216,16 @@ const ResearchTracker = () => {
                     <td className="py-3 px-4 text-gray-600 text-sm italic max-w-xs truncate">
                       {record.remarks || '-'}
                     </td>
+                    {user?.role === 'ADMIN' && (
+                      <td className="py-3 px-4">
+                        <button 
+                          onClick={() => openDeleteModal(record.studentId)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -231,6 +295,23 @@ const ResearchTracker = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">{t('Delete Research Progress')}</h3>
+            <p className="mb-6">{t('Are you sure you want to delete this research progress record? This action cannot be undone.')}</p>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setShowDeleteModal(false)} className="btn btn-secondary flex-1">
+                {t('Cancel')}
+              </button>
+              <button type="button" onClick={handleDelete} className="btn btn-danger flex-1">
+                {t('Delete')}
+              </button>
+            </div>
           </div>
         </div>
       )}

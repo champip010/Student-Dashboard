@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { assignmentService } from '../services/api';
 import { Assignment } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 const AssignmentDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +45,16 @@ const AssignmentDetail = () => {
       window.location.reload();
     } catch (error) {
       console.error('Failed to grade:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id || !confirm('Are you sure you want to delete this assignment? This action cannot be undone.')) return;
+    try {
+      await assignmentService.delete(id);
+      navigate('/assignments');
+    } catch (error) {
+      console.error('Failed to delete assignment:', error);
     }
   };
 
@@ -157,6 +168,17 @@ const AssignmentDetail = () => {
                   <p className="text-center text-gray-500 py-4">No submissions yet</p>
                 )}
               </div>
+            </div>
+          )}
+          
+          {isTeacher && (
+            <div className="space-y-3">
+              <Link to={`/assignments/${id}/edit`} className="btn btn-primary w-full">
+                Edit Assignment
+              </Link>
+              <button onClick={handleDelete} className="btn btn-danger w-full">
+                Delete Assignment
+              </button>
             </div>
           )}
         </div>

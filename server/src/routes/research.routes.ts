@@ -102,4 +102,38 @@ router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.TEACHER), asyn
   }
 });
 
+// Delete research progress
+router.delete('/:studentId', authenticate, authorize(UserRole.ADMIN), async (req: AuthRequest, res: Response) => {
+  try {
+    const { studentId } = req.params;
+
+    const record = await prisma.researchProgress.findUnique({
+      where: { studentId },
+      include: { student: true },
+    });
+
+    if (!record) {
+      return res.status(404).json({ error: 'Research record not found' });
+    }
+
+    await prisma.researchProgress.delete({
+      where: { studentId },
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        action: 'Research Progress Deleted',
+        details: `Research progress deleted for ${record.student.firstName} ${record.student.lastName}`,
+        userId: req.user!.id,
+        studentId: record.studentId,
+      },
+    });
+
+    return res.json({ message: 'Research progress deleted successfully' });
+  } catch (error) {
+    console.error('Delete research progress error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
